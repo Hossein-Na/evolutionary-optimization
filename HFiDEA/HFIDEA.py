@@ -135,7 +135,7 @@ def selectEnvironment(pop,referenceVectors,F):
             solution = []
             decietionV = []
             while i < len(solutions):
-                if lhfDominate(solutions[i],selectedsolution):
+                if lhfDominate(solutions[i],selectedsolution,referenceVectors[f].ref):
                     g.append(solutions[i])
                     if distanceS [i] < min:
                         min = distanceS[i]
@@ -213,101 +213,114 @@ def checkStabalization(p,q,pObjV,qObjV,refs,psi,history):
             if min > distance:
                 associatdV = ref
                 min =distance
-        associatdV.pS.append(x)
-        associatdV.pDV.append(q[i])
+        associatdV.qS.append(x)
+        associatdV.qDV.append(q[i])
         i += 1
 
-    muD = 0
+    muDt = 0
     zA = 0
 
     for reference in refs:
-        if len(reference.ps) > 0 and len(reference.qs) > 0:
-            sumP = np.sum(ref.ps, axis=0) 
-            sumQ = np.sum(ref.qs, axis=0)
+        if len(reference.pS) > 0 and len(reference.qS) > 0:
+            sumP = np.sum(reference.pS, axis=0) 
+            sumQ = np.sum(reference.qS, axis=0)
 
-            barP = sumP / len(ref.ps)
-            barQ = sumQ / len(ref.qs)
+            barP = sumP / len(reference.pS)
+            barQ = sumQ / len(reference.qS)
 
             D_z = np.linalg.norm(barP - barQ)
 
             muDt += D_z
             zA += 1
         else:
-            muD += 1.0
+            muDt += 1.0
             zA += 1
 
-        if zA > 0:
-            muD_t = muD_t / zA
-        else:
-            muD_t = 1.0  
+        
+        reference.qS = []
+        reference.qDV = []
+        reference.pS = []
+        reference.pDV = []
 
 
-        if 'muD' not in history:
-            history['muD'] = []
-            history['D'] = []
-            history['S'] = []
-
-        history['muD'].append(muD_t)
-        mu_t = np.mean(history['muD'])
-        sigma_t = np.std(history['muD'])
-
-        D_t = round(mu_t, Np)
-        S_t = round(sigma_t, Np)
-
-        history['D'].append(D_t)
-        history['S'].append(S_t)
-
-        c1 = False
-        c2 = False
-
-        if len(history['D']) >= Ns + 1:
-            last_D = history['D'][-(Ns + 1):]  
-            last_S = history['S'][-(Ns + 1):]  
-
-            all_D_equal = True
-            idx = 0
-            while idx < len(last_D):
-                if last_D[idx] != D_t:
-                    all_D_equal = False
-                    break
-                idx += 1
-
-            if all_D_equal:
-                c1 = True
-
-            all_S_equal = True
-            idx = 0
-            while idx < len(last_S):
-                if last_S[idx] != S_t:
-                    all_S_equal = False
-                    break
-                idx += 1
-
-            if all_S_equal:
-                c2 = True
-
-        stabilized = (c1 and c2)
+    if zA > 0:
+        muDt = muDt / zA
+    else:
+        muDt = 1.0  
+    if 'muD' not in history:
+        history['muD'] = []
+        history['D'] = []
+        history['S'] = []
+    history['muD'].append(muDt)
+    mu_t = np.mean(history['muD'])
+    sigma_t = np.std(history['muD'])
+    D_t = round(mu_t, Np)
+    S_t = round(sigma_t, Np)
+    history['D'].append(D_t)
+    history['S'].append(S_t)
+    c1 = False
+    c2 = False
+    if len(history['D']) >= Ns + 1:
+        last_D = history['D'][-(Ns + 1):]  
+        last_S = history['S'][-(Ns + 1):]  
+        all_D_equal = True
+        idx = 0
+        while idx < len(last_D):
+            if last_D[idx] != D_t:
+                all_D_equal = False
+                break
+            idx += 1
+        if all_D_equal:
+            c1 = True
+        all_S_equal = True
+        idx = 0
+        while idx < len(last_S):
+            if last_S[idx] != S_t:
+                all_S_equal = False
+                break
+            idx += 1
+        if all_S_equal:
+            c2 = True
+    stabilized = (c1 and c2)
+    
 
     return stabilized, history
 
 
 #As the Investigating the Normalization Procedure of NSGA-III from DR.Deb mentioned the problems of finding hyperplane i implement the solution that they proposed at there  
-def updateNadirP(pop):
-    eps = 1e-4
+def updateNadirP(pop,zIdeal):
+    eps = 1e-6
     extremePoints = []
     extremePoint = [] 
     nadirP = [- math.inf] * len(pop[0])
     i = 0
+    k = 0
+    while k < len(pop):
+        l = 0 
+        while l < len(pop[0]):
+            pop[k][l] = pop[k][l] - zIdeal[l]
+            l += 1
+        k += 1
+
     while i < len(pop[0]):
         min = math.inf
         for x in pop:
             j = 0
+            max = - math.inf
             while j < len(x):
                 if j != i :
-                    if min > x[j]:
-                        min = x[j] 
-                        extremePoint = x
-                j += 1
+                    if max < x[j]:
+                        max = x[j] *1e6
+
+                j += 1  
+            if max < x[i]:
+                max = x[i]
+                
+                     
+            if min > max:
+                extremePoint = x
+                min = max
+                
         extremePoints.append(extremePoint)
         i = i + 1
 
@@ -315,6 +328,7 @@ def updateNadirP(pop):
     extremePoints = np.array(extremePoints)
     rankExtreme = np.linalg.matrix_rank(extremePoints)
     numOfRow = extremePoints.shape[0]
+
     i = 0
     while i < len(extremePoints):
         if extremePoints[i][i] < eps:
@@ -336,24 +350,40 @@ def updateNadirP(pop):
             else :
                 flag = False    
 
-    if flag == False:
+
+
+    if not flag:
         flag1 = 1 
         j = 0
         while j < len(pop) :
             k = 0
             while k < len(nadirP):
-                if nadirP[k] < pop[i][j][k] or flag1 == 1:
-                    nadirP[k] = pop[i][j][k]
+                if nadirP[k] < pop[j][k] or flag1 == 1:
+                    nadirP[k] = pop[j][k]
             flag1 = 0
             j += 1
 
+
+    k = 0
+    while k < len(nadirP):
+       if nadirP[k] < eps:  
+           nadirP[k] = eps
+           print(f"Warning: Objective {k} range forced to {eps}.")
+       k += 1
+
+    k = 0
+    while k < len(zIdeal):
+        nadirP[k] = nadirP[k] + zIdeal[k]
+        k += 1
+
+    
     return nadirP
 
 
 def HFIDEA(N,pop,refs,uf,t,CR,MR,LB,UB,psiN,psiTM):
     ZNadir = []
-    history = []
-    historyTM = []
+    history = {}
+    historyTM = {}
     i = 0
     while i < t:
 
@@ -390,25 +420,24 @@ def HFIDEA(N,pop,refs,uf,t,CR,MR,LB,UB,psiN,psiTM):
                 if min > F[j][k]:
                     min = F[j][k]
                 j += 1
-            ZIdealP.apppend(min)
+            ZIdealP.append(min)
             k += 1
 
-        ZNadir = updateNadirP(F)
         if len(ZNadir) > 0 :
             k = 0 
             while k < len(F):
                 l = 0
                 while l < len(F[0]):
                     F[k][l] =( F[k][l] - ZIdealP[l]) / (ZNadir[l] - ZIdealP[l])
-                l += 1 
-            k += 1
+                    l += 1 
+                k += 1
 
         else:
             k = 0
             while k < len(F):
                 l = 0 
                 while l < len(F[0]):
-                    F[k][l] = F[k][l] - ZIdealP[k]
+                    F[k][l] = F[k][l] - ZIdealP[l]
                     l += 1
                 k += 1
         pF = F[:len(pop)]
@@ -417,14 +446,17 @@ def HFIDEA(N,pop,refs,uf,t,CR,MR,LB,UB,psiN,psiTM):
         Ctm = False
 
         if Cn :
-            ZNadir = updateNadirP(newPopF)
+            ZNadir = updateNadirP(newPopF.copy(),ZIdealP)
         if uf :
-            Ctm,histotryTM = checkStabalization(pop,newPop,pF,newPopF,refs,psiTM,historyTM) 
+            Ctm,historyTM = checkStabalization(pop,newPop,pF,newPopF,refs,psiTM,historyTM) 
 
         pop = newPop
+        pF = newPopF
         i += 1
         if Ctm :
             break
+
+    return pop , pF
 
 
 
