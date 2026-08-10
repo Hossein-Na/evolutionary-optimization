@@ -11,14 +11,18 @@ The initial implementation of this project was written during my second undergra
 This repository focuses on implementing foundational evolutionary optimization algorithms from scratch. For algorithm variants and extensions that already have mature open-source implementations, the emphasis is on understanding, evaluation, and research rather than reimplementing existing software.
 
 ## Implemented Algorithms
-- [x] Differential Evolution (DE)(Initial implementation)
-- [x] NSGA-III (Initial implementation)
 
-## Planned Algorithms
-- [x] Refactor Differential Evolution (DE)
-- [x] Refactor NSGA-III 
+- [x] Differential Evolution (DE)
+  - *Differential Evolution – A Simple and Efficient Heuristic for Global Optimization over Continuous Spaces*
+
+- [x] NSGA-III
+  - *An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based Nondominated Sorting Approach*
+
 - [x] MOEA/D
-- [ ] HFiDEA (localized high fidelity dominance based EA)
+  - *A Multiobjective Evolutionary Algorithm Based on Decomposition*
+
+- [x] HFiDEA
+  - *A Localized High-Fidelity-Dominance-Based Many-Objective Evolutionary Algorithm*
 
 ## Features
 
