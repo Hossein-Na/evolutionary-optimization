@@ -21,9 +21,9 @@ def sortFront(popObejectiveValue,pop):
     while i < len(popObejectiveValue):
         j = 0
         dom = 0
-        flag1 = True
-        flag2 = True
         while j < len(popObejectiveValue):
+            flag1 = True
+            flag2 = True
             k = 0
             while k < len(popObejectiveValue[0]):
                 if popObejectiveValue[i][k] > popObejectiveValue[j][k] :
