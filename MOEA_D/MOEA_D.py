@@ -2,6 +2,7 @@ import math
 import numpy as np
 import random
 
+
 class wVectorn:
     def __init__(self,wVector1,solution,PBIS,decietionV):
         self.wVector1 = wVector1
@@ -56,7 +57,7 @@ def PBI(wVector,idealP,solution, theta):
 
     lengthSP = np.dot(wVector,solution) / lenwvector
 
-    d1 = lengthSP - lengthIdealPP 
+    d1 = abs(lengthSP - lengthIdealPP )
 
     vectorI = (np.array(wVector) / lenwvector) * lengthIdealPP
     vec1 = vectorI - idealP 
@@ -83,40 +84,18 @@ def nonDomnanceSet(popValue,pop):
             elif j == (len(popValue) -1 ) :
                 li.append(pop[i])
                 li.append(popValue[i])
-                EP.append(li) 
+                EP.append(li)
+
     return EP
 
 
-def findneighbors(wVectors,numNeighbors):
-    i = 0 
-    
-    while i < len(wVectors):
-        distanceV = []
-        j = 0 
-        while j < len(wVectors):
-            x = wVectors[i].wVector1 - wVectors[j].wVector1
-            y = np.linalg.norm(x)
-            dist = y
-            distanceV.append(dist)
-            j += 1
-        
-        k = 0
-        while (k < numNeighbors):
-            n = 0
-            min = float('inf')
-            j = 0
-            while j < len(distanceV):
-                if distanceV[j] < min: 
-                    min = distanceV[j]
-                    n = j
-                    flag = False
-
-                j += 1
-            wVectors[i].setNeighbor(wVectors[n])
-            distanceV.pop(n)
-
-            k += 1
-        i += 1
+def findneighbors(wVectors, numNeighbors):
+    for i in range(len(wVectors)):
+        dists = [np.linalg.norm(wVectors[i].wVector1 - wVectors[j].wVector1)
+                  for j in range(len(wVectors))]
+        nearest = np.argsort(dists)[:numNeighbors]
+        for idx in nearest:
+            wVectors[i].setNeighbor(wVectors[idx])
 
 
 
@@ -134,7 +113,7 @@ def findIdealPoint(pop):
 
 
 
-def MOEA_D(pop,wVectors , numIteration, numNeighbors,CR,MR,objLowerBounds,objUBounds):
+def MOEA_D(pop,wVectors , numIteration, numNeighbors,CR,MR,DVLowerBounds,DVUBounds):
 
     wVectors = np.array(wVectors)
     pop = np.array(pop)
@@ -169,7 +148,7 @@ def MOEA_D(pop,wVectors , numIteration, numNeighbors,CR,MR,objLowerBounds,objUBo
             else:
                 newSolutionDV = arrWVectors[j].neighbors[n].decietionValue.copy()
 
-            newSolutionDV = mutation(newSolutionDV,objLowerBounds,objUBounds,MR)
+            newSolutionDV = mutation(newSolutionDV,DVLowerBounds,DVUBounds,MR)
 
             newSolution = objFunction(newSolutionDV)
             k = 0 
@@ -186,7 +165,7 @@ def MOEA_D(pop,wVectors , numIteration, numNeighbors,CR,MR,objLowerBounds,objUBo
                     arrWVectors[j].neighbors[k].decietionValue = newSolutionDV
                     break
                 k += 1
-            
+
             k = 0 
             dominated = False
             while k < len(EP) : 
@@ -197,7 +176,7 @@ def MOEA_D(pop,wVectors , numIteration, numNeighbors,CR,MR,objLowerBounds,objUBo
                     dominated = True
                 k += 1
                 
-            if  dominated != True:
+            if dominated != True:
                 li = [newSolutionDV,newSolution]         
                 EP.append(li)
 
